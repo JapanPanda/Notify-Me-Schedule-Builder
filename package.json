@@ -7,5 +7,19 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Vincent Boc",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JapanPanda/Notify-Me-Schedule-Builder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JapanPanda/Notify-Me-Schedule-Builder/issues"
+  },
+  "homepage": "https://github.com/JapanPanda/Notify-Me-Schedule-Builder#readme"
 }
