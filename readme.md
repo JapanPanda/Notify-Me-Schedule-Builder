@@ -4,6 +4,8 @@ This is a work in progress app that notifies you via push notification (on deskt
 
 ## How To Run This?
 Well for now, it's not done yet but it'll be a simple one-liner `npm app.js`.
+Alternatively, if you wanna save your electricity bill (since you're a poor student like me!),
+you can run this on your own personal server 24/7 rather than a home setup (and get updates 24/7).
 
 ## What Do I Need?
 All the npm packages can be installed with a simple `npm install`
