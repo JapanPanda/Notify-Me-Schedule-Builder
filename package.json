@@ -1,0 +1,11 @@
+{
+  "name": "schedule-builder-notify",
+  "version": "1.0.0",
+  "description": "Notifies you when a class has an available spot",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vincent Boc",
+  "license": "ISC"
+}
