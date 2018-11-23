@@ -4,17 +4,12 @@ const fs = require('fs');
 const tokens = require('./tokens.json');
 const pushbulleturl = 'https://api.pushbullet.com/v2/pushes'
 
-
-
-
-
 function pushBulletTest() {
-
   var testOptions = {
     method: 'POST',
     url: pushbulleturl,
     headers: {
-      'Access-Token': tokens.pushbulletToken,
+      'Access-Token': tokens.pushbullet_token,
       'Content-Type': 'application/json'
     },
     body: {
@@ -29,6 +24,7 @@ function pushBulletTest() {
   rp(testOptions)
     .then(function (parsedBody) {
       console.log("POST SUCCEEDED");
+      console.log(JSON.stringify(parsedBody, null, 2));
     })
     .catch(function (err) {
       console.log("POST FAILED");
@@ -43,7 +39,7 @@ function start()
   console.log('Attemping to read tokens.json file...');
   console.log('Username: ' + tokens.username);
   console.log('Password: ' + tokens.password);
-  console.log('PushBullet Token: ' + tokens.pushbulletToken);
+  console.log('PushBullet Token: ' + tokens.pushbullet_token);
   pushBulletTest();
 
 }
