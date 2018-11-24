@@ -16,18 +16,18 @@ function pushBulletTest() {
       'type': 'note',
       'title': 'Notify Me! Pushbullet Test',
       'body': 'UC Davis Schedule Builder Notify Me!\nTesting the pushbullet...',
-      'email': 'vboc@ucdavis.edu'
+      'email': tokens.pushbulletEmail
     },
     json: true
   };
 
   rp(testOptions)
     .then(function (parsedBody) {
-      console.log("POST SUCCEEDED");
+      console.log("PushBullet Post Succeeded!");
       console.log(JSON.stringify(parsedBody, null, 2));
     })
     .catch(function (err) {
-      console.log("POST FAILED");
+      console.log("PushBullet Post Failed!");
       console.log(err);
     });
   exit();
