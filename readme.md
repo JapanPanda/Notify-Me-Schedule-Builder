@@ -19,7 +19,8 @@ You need a tokens.json file with your UC Davis Kerberos credentials and PushBull
 {
   'username': 'Bob420BlazeIt',
   'password': 'ucdavisiscool',
-  'pushbullet': 'pleaseinsertyourtokenhere'
+  'pushbullet_email': 'bob@koolkidsonly.com',
+  'pushbullet_token': 'pleaseinsertyourtokenhere'
 }
 ```
 
