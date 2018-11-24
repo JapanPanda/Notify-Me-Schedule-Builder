@@ -48,11 +48,11 @@ function getTerm(date) {
   }
   if (date.getMonth() >= 9 && date.getMonth() <= 11) {
     console.log('Entering into Winter quarter since it is month ' + date.getMonth() + '...');
-    return 'Winter Quarter ' + (parseInt(date.getFullYear()) + 1);
+    return (parseInt(date.getFullYear()) + 1) + '01';
   }
   else if (date.getMonth() >= 1 && date.getMonth() <= 3) {
     console.log('Entering into Spring quarter since it is month ' + date.getMonth() + '...');
-    return 'Spring Quarter ' + (parseInt(date.getFullYear()));
+    return (parseInt(date.getFullYear())) + '03';
   }
   else if (date.getMonth() >= 4 && date.getMonth() <= 6) {  // NOt sure how summer registration works, will confirm later
     console.log('Entering into Summer Session I since it is month ' + date.getMonth() + '...');
@@ -60,7 +60,7 @@ function getTerm(date) {
   }
   else if (date.getMonth() >= 7 && date.getMonth() <= 9) {
     console.log('Entering into Fall Quarter since it is month ' + date.getMonth() + '...');
-    return 'Fall Quarter ' + (parseInt(date.getFullYear()) + 1);
+    return (parseInt(date.getFullYear()) + 1) + '10';
   }
   else {
     console.log('It\'s a bit early to set up this program right now for Spring quarter registration...\nTry again next month');
@@ -71,6 +71,7 @@ function getTerm(date) {
 // Had to use a headless browser since request wasn't good enough to load the client-side javascript
 async function schedulebuilderLogin() {
   console.log('Attempting to log into Schedule Builder...');
+
   await puppeteer.launch().then(async browser => {
     try {
       var username = tokens.username;
@@ -83,9 +84,17 @@ async function schedulebuilderLogin() {
         document.querySelector('#submit').click();
       }, tokens);
       await page.waitForNavigation();
+      console.log('Logged into Schedule Builder successfully!');
       var date = new Date;
-      console.log(getTerm(date));
+      var dateString = getTerm(date);
+      console.log(dateString);
       // TO DO: redirect to the main picking schedule page
+      await Promise.all([
+        page.select('select#termCode1', dateString),
+        page.waitForNavigation(),
+        page.click('button')
+      ]);
+      await page.screenshot({path: './debug/screenshots/screenshot.png'});
       await browser.close();
     }
     catch (err) {
@@ -95,11 +104,11 @@ async function schedulebuilderLogin() {
       await browser.close();
     }
   });
-
-
+  // Posting to the search url results in some really really hard to parse (unreadable) information, so we'll just use puppeteer to scrape
+  // see if theres a way to be cool and use request (i think this is a pain and should not be so)
 }
 
-function start()
+async function start()
 {
   console.log('Starting the server now...');
   console.log('Attempting to read tokens.json file...');
@@ -110,7 +119,8 @@ function start()
   console.log('Classes (non-specific section): ' + classes.classes);
   console.log('Specific Sections: ' + classes.specific_sections + '\n');
   console.log('Logging into Schedule Builder...');
-  schedulebuilderLogin();
+  await schedulebuilderLogin();  // Good ol' procedural programming
+  exit();
 }
 
 function exit()
