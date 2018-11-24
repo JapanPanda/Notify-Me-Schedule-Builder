@@ -14,13 +14,31 @@ PushBullet must be installed on the platform you wish to receive notifications o
 
 You need a tokens.json file with your UC Davis Kerberos credentials and PushBullet token.
 
-## tokens.json format
+In addition, you will need a classes.json file with the classes you want to keep track of.
+
+## tokens.json Format
 ```
 {
   'username': 'Bob420BlazeIt',
   'password': 'ucdavisiscool',
   'pushbullet_email': 'bob@koolkidsonly.com',
   'pushbullet_token': 'pleaseinsertyourtokenhere'
+}
+```
+
+## classes.json Format
+For classes that you don't care which section you get into, put under classes without a section number.
+For classes where you want a specific section, put the whole name including the section number into specific_sections.
+```
+{
+  'classes': [
+    'JPN 002',
+    'ECS 050'
+  ],
+  'specific_sections': [
+    'ECS 132A A04',
+    'ECS 020 A02'
+  ]
 }
 ```
 
