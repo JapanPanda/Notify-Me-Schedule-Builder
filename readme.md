@@ -23,6 +23,8 @@ you can run this on your own personal server 24/7 rather than a home setup (and 
 
 To run it in verbose mode (see what's happening within each query), run `node app.js -v`.
 
+To have daily reminders that this program is still running, run `node app.js -r`.
+
 ## What Do I Need?
 Well, you need node.js installed and npm installed on a **LINUX** distro or **macOS** setup.
 
