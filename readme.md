@@ -33,9 +33,13 @@ In addition, you will need a classes.json file with the classes you want to keep
 }
 ```
 
+## Getting your PushBullet Token
+Login to [PushBullet Settings](https://www.pushbullet.com/#settings) and generate a token there.
+
 ## classes.json Format
 For classes that you don't care which section you get into, put under classes without a section number.
 For classes where you want a specific section, put the whole name including the section number into specific_sections.
+*Please make sure the class names are verbatim (matching capitalization) to avoid any errors!*
 ```
 {
   'classes': [
@@ -49,8 +53,6 @@ For classes where you want a specific section, put the whole name including the 
 }
 ```
 
-## Getting your PushBullet Token
-Login to [PushBullet Settings](https://www.pushbullet.com/#settings) and generate a token there.
 
 ## Privacy Disclosure
 This app WILL NOT give me any access to whatever information you have since you will be running it on your own computer or server.
