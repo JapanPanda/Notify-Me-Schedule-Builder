@@ -9,7 +9,7 @@ All you need is a simple one-liner `node app.js` and it'll send updates every 30
 
 If you want to customize how many times it should send updates, run `node app.js -t -insert minutes here-`.
 
-Example: `node app.js -t 10` will send updates every 10 minutes. *I strongly do not recommend values under 1 minute.*
+Example: `node app.js -t 10` will send updates every 10 minutes. **I strongly do not recommend values under 1 minute.**
 
 I suggest using the npm package [forever](https://www.npmjs.com/package/forever) to have this script run in the background.
 
@@ -19,7 +19,7 @@ you can run this on your own personal server 24/7 rather than a home setup (and 
 To run it in verbose mode (see what's happening within each query), run `node app.js -v`.
 
 ## What Do I Need?
-Well, you need node.js installed and npm installed on a *LINUX* distro or *MAC* setup.
+Well, you need node.js installed and npm installed on a **LINUX** distro or **macOS** setup.
 
 All the npm packages can be installed with a simple `npm install`
 
@@ -45,7 +45,7 @@ Login to [PushBullet Settings](https://www.pushbullet.com/#settings) and generat
 ## classes.json Format
 For classes that you don't care which section you get into, put under classes without a section number.
 For classes where you want a specific section, put the whole name including the section number into specific_sections.
-*Please make sure the class names are verbatim (matching capitalization) to avoid any errors!*
+**Please make sure the class names are verbatim (matching capitalization) to avoid any errors!**
 ```
 {
   'classes': [
