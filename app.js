@@ -341,6 +341,12 @@ async function start()
 
   // Remind user that this is still on
   if (reminder) {
+    console.log(chalk.cyan('Sending a daily reminder...'));
+    var message = 'This is a daily reminder that Notify Me! is still running!';
+    message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+    var title = 'Notify Me! Daily Reminder';
+    sendPushBullet(title, message);
+    
     setInterval(function() {
       console.log(chalk.cyan('Sending a daily reminder...'));
       var message = 'This is a daily reminder that Notify Me! is still running!';
