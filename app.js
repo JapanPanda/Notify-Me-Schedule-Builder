@@ -50,8 +50,7 @@ async function sendPushBullet(open_classes) {
 
   await rp(pushOptions)
     .then((res) => {
-      if (verbose)
-        console.log(chalk.cyan('Sent out a PushBullet notification...'));
+      console.log(chalk.cyan('Sent out a PushBullet notification...'));
     })
     .catch((err) => {
       console.log(chalk.red('Sending a PushBullet notification failed!'));
@@ -278,7 +277,7 @@ async function sbInit() {
       if (resultsJSON['open_classes'].length > 0) {
         await sendPushBullet(resultsJSON['open_classes']);
       }
-      else if (verbose)
+      else
         console.log(chalk.cyan('\nNo open classes found, so not sending Push notification...'));
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
