@@ -13,9 +13,17 @@ const tokens = require('./tokens.json');
 const classes = require('./classes.json');
 const pushbulleturl = 'https://api.pushbullet.com/v2/pushes';
 const sburl = 'https://cas.ucdavis.edu/cas/login?service=https%3A%2F%2Fmy%2Eucdavis%2Eedu%2Fschedulebuilder%2Findex%2Ecfm%3Fsb';
+var argv = require('minimist')(process.argv.slice(2));
+const verbose = argv['v'];
 
-function pushBulletTest() {
-  var testOptions = {
+async function sendPushBullet(open_classes) {
+  var message = 'Some open classes have been found: \n';
+  for (const classes in open_classes) {
+    message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
+  }
+  message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+
+  var pushOptions = {
     method: 'POST',
     url: pushbulleturl,
     headers: {
@@ -24,21 +32,21 @@ function pushBulletTest() {
     },
     body: {
       'type': 'note',
-      'title': 'Notify Me! Pushbullet Test',
-      'body': 'UC Davis Schedule Builder Notify Me!\nTesting the pushbullet...',
+      'title': 'Notify Me! Open Classes Found',
+      'body': message,
       'email': tokens.pushbulletEmail
     },
     json: true
   };
 
-  rp(testOptions)
+  await rp(pushOptions)
     .then((res) => {
-      console.log('PushBullet Post Succeeded!');
-      console.log(JSON.stringify(parsedBody, null, 2));
+      if (verbose)
+        console.log(chalk.cyan('Sent out a PushBullet notification...'));
     })
     .catch((err) => {
-      console.log('PushBullet Post Failed!');
-      console.log(err);
+      console.log(chalk.red('Sending a PushBullet notification failed!'));
+      console.log(chalk.red(err));
     });
 }
 
@@ -47,19 +55,23 @@ function getTerm(date) {
     throw new Error('Date is null!');
   }
   if (date.getMonth() >= 9 && date.getMonth() <= 11) {
-    console.log(chalk.cyan('Entering into Winter quarter since it is month ' + date.getMonth() + '...'));
+    if (verbose)
+      console.log(chalk.cyan('Entering into Winter quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear()) + 1) + '01';
   }
   else if (date.getMonth() >= 1 && date.getMonth() <= 3) {
-    console.log(chalk.cyan('Entering into Spring quarter since it is month ' + date.getMonth() + '...'));
+    if (verbose)
+      console.log(chalk.cyan('Entering into Spring quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear())) + '03';
   }
   else if (date.getMonth() >= 4 && date.getMonth() <= 6) {  // NOt sure how summer registration works, will confirm later
-    console.log(chalk.cyan('Entering into Summer Session I since it is month ' + date.getMonth() + '...'));
+    if (verbose)
+      console.log(chalk.cyan('Entering into Summer Session I since it is month ' + date.getMonth() + '...'));
     return 'Summer Session I ' + (parseInt(date.getFullYear()));
   }
   else if (date.getMonth() >= 7 && date.getMonth() <= 9) {
-    console.log(chalk.cyan('Entering into Fall Quarter since it is month ' + date.getMonth() + '...'));
+    if (verbose)
+      console.log(chalk.cyan('Entering into Fall Quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear()) + 1) + '10';
   }
   else {
@@ -76,7 +88,8 @@ async function scrapeClasses(page, resultsJSON) {
     var divs = await page.$$('.data-item-short');
     while (divs.length == 0) {
         // Theres a weird bug here where the results don't show up sometime
-        console.log(chalk.red('Could not load the search results, trying again...'));
+        if (verbose)
+          console.log(chalk.red('Could not load the search results, trying again...'));
         await page.screenshot({path: './debug/screenshots/error.png'});
         await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
         await Promise.all([
@@ -99,8 +112,8 @@ async function scrapeClasses(page, resultsJSON) {
       }
       classesJSON.push(parsedObj);
     }
-
-    console.log(chalk.cyan('Logging JSON for ' + currClass + ' into results.json...'));
+    if (verbose)
+      console.log(chalk.cyan('Logging JSON for ' + currClass + ' into results.json...'));
     resultsJSON['classes'][currClass] = classesJSON;
   }
 }
@@ -113,7 +126,8 @@ async function scrapeSpecificSections(page, resultsJSON) {
     await page.waitFor(1000);
     var divs = await page.$$('.data-item-short');
     while (divs.length == 0) {
-        console.log(chalk.red('Could not load the search results, trying again...'));
+        if (verbose)
+          console.log(chalk.red('Could not load the search results, trying again...'));
         await page.screenshot({path: './debug/screenshots/error.png'});
         await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
         await Promise.all([
@@ -137,26 +151,29 @@ async function scrapeSpecificSections(page, resultsJSON) {
         }
       }
     }
-
-    console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
+    if (verbose)
+      console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
     resultsJSON['specific_sections'][currSection] = classesJSON;
   }
 }
 
 async function sort(resultsJSON) {
-  console.log(chalk.cyan('\nLogging open classes into results.json...'));
+  if (verbose)
+    console.log(chalk.cyan('\nLogging open classes into results.json...'));
   for (const classes in resultsJSON['classes']) {
     for (const sections in resultsJSON['classes'][classes]) {
       var section = resultsJSON['classes'][classes][sections];
       if (parseInt(section['class_spots']) > 0) {
-        console.log(chalk.blueBright('- ' + section['class_name']));
+        if (verbose)
+          console.log(chalk.blueBright('- ' + section['class_name']));
         resultsJSON['open_classes'].push(section);
       }
     }
   }
   for (const classes in resultsJSON['specific_sections']) {
     if (parseInt(resultsJSON['specific_sections'][classes]['class_spots']) > 0) {
-      console.log(chalk.blueBright('- ' + resultsJSON['specific_sections'][classes]['class_name']));
+      if (verbose)
+        console.log(chalk.blueBright('- ' + resultsJSON['specific_sections'][classes]['class_name']));
       resultsJSON['open_classes'].push(resultsJSON['specific_sections'][classes]);
     }
   }
@@ -164,7 +181,8 @@ async function sort(resultsJSON) {
 
 // Had to use a headless browser since request wasn't good enough to load the client-side javascript
 async function sbInit() {
-  console.log(chalk.cyan('Attempting to log into Schedule Builder...'));
+  if (verbose)
+    console.log(chalk.cyan('Attempting to log into Schedule Builder...'));
 
   await puppeteer.launch().then(async browser => {
     try {
@@ -186,7 +204,8 @@ async function sbInit() {
         page.click('button')
       ]);
 
-      console.log(chalk.cyan('Successfully entered the quarter\n'));
+      if (verbose)
+        console.log(chalk.cyan('Successfully entered the quarter\n'));
 
       var resultsJSON = {
         'classes': {},
@@ -194,16 +213,22 @@ async function sbInit() {
         'open_classes': []
       };
 
-      console.log(chalk.cyan('Beginning to query for general classes...'));
+      if (verbose)
+        console.log(chalk.cyan('Beginning to query for general classes...'));
       // For the non-specific section classes
       await scrapeClasses(page, resultsJSON);
 
-      console.log(chalk.cyan('\nBeginning to query for specific sections...'));
+      if (verbose)
+        console.log(chalk.cyan('\nBeginning to query for specific sections...'));
       // For the specific sections
       await scrapeSpecificSections(page, resultsJSON);
 
       // Get the open classes from JSON
       await sort(resultsJSON);
+
+      if (resultsJSON['open_classes'].length > 0) {
+        await sendPushBullet(resultsJSON['open_classes']);
+      }
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
@@ -220,6 +245,8 @@ async function sbInit() {
 
 async function start()
 {
+  if (verbose)
+    console.log(chalk.cyan('Verbose mode activated'));
   console.log(chalk.cyan('Starting the server now...'));
   console.log(chalk.cyan('Attempting to read tokens.json file...'));
   if (tokens === null) {
@@ -236,8 +263,16 @@ async function start()
   }
   console.log(chalk.blueBright('Classes (non-specific section): ') + classes.classes);
   console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
-  await sbInit();  // Good ol' procedural programming
-  exit();
+  // Initial sbInit call
+  console.log(chalk.cyan('Starting the loop, you will receive updates every 30 minutes!'));
+  console.log(chalk.cyan('Starting a query...\nPress CTRL + C anytime to quit!'));
+  await sbInit();
+
+  // Start the loop for calling every half an hour!
+  setInterval(async function() {
+    console.log(chalk.cyan('Starting a query...\nPress CTRL + C anytime to quit!'));
+    sbInit();
+  }, 1800000);
 }
 
 function exit()
@@ -245,5 +280,4 @@ function exit()
   console.log(chalk.red('Closing server now...'));
   process.exit();
 }
-
 start();
