@@ -9,6 +9,7 @@ const sburl = 'https://cas.ucdavis.edu/cas/login?service=https%3A%2F%2Fmy%2Eucda
 var argv = require('minimist')(process.argv.slice(2));
 const verbose = argv['v'];
 const updateTime = argv['t'] == null ? 30 : argv['t'];
+const reminder = argv['r'];
 
 var tokens;
 try {
@@ -26,13 +27,7 @@ catch (err) {
   classes = null;
 }
 
-async function sendPushBullet(open_classes) {
-  var message = 'Some open classes have been found: \n';
-  for (const classes in open_classes) {
-    message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
-  }
-  message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
-
+async function sendPushBullet(title, message) {
   var pushOptions = {
     method: 'POST',
     url: pushbulleturl,
@@ -42,7 +37,7 @@ async function sendPushBullet(open_classes) {
     },
     body: {
       'type': 'note',
-      'title': 'Notify Me! Open Classes Found',
+      'title': title,
       'body': message,
       'email': tokens.pushbulletEmail
     },
@@ -284,7 +279,14 @@ async function sbInit() {
       }
 
       if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
-        await sendPushBullet(resultsJSON['open_classes']);
+        var message = 'Some open classes have been found: \n';
+        var open_classes = resultsJSON['open_classes'];
+        for (const classes in open_classes) {
+          message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
+        }
+        message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+        title = 'Notify Me! Open Classes Found';
+        await sendPushBullet(title, message);
       }
       else if (resultsJSON['open_classes'].length > 0 && _.isEqual(resultsJSON, prevResults)) {
         console.log(chalk.cyan('No update from previous push notification, so not sending push notification'));
@@ -299,6 +301,9 @@ async function sbInit() {
       console.log(chalk.red('Something went wrong inside of Puppeteer...'));
       console.log(chalk.red(err.stack));
       console.log(chalk.red('Closing Puppeteer...'));
+      var message = 'Something went wrong with Notify Me! Please check the logs...';
+      var title = 'Notify Me! Error';
+      sendPushBullet(title, message);
       await browser.close();
       exit();
     }
@@ -333,8 +338,19 @@ async function start()
   console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
 
   await sbInit();
+
+  // Remind user that this is still on
+  if (reminder) {
+    setInterval(function() {
+      console.log(chalk.cyan('Sending a daily reminder...'));
+      var message = 'This is a daily reminder that Notify Me! is still running!';
+      message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+      var title = 'Notify Me! Daily Reminder';
+      sendPushBullet(title, message);
+    }, 86400000);
+  }
   // Start the loop for calling every half an hour!
-  setInterval(async function() {
+  setInterval(function() {
     currDate = new Date();
     console.log(chalk.yellow(currDate));
     console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
