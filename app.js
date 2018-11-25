@@ -7,6 +7,7 @@ const pushbulleturl = 'https://api.pushbullet.com/v2/pushes';
 const sburl = 'https://cas.ucdavis.edu/cas/login?service=https%3A%2F%2Fmy%2Eucdavis%2Eedu%2Fschedulebuilder%2Findex%2Ecfm%3Fsb';
 var argv = require('minimist')(process.argv.slice(2));
 const verbose = argv['v'];
+const updateTime = argv['t'] == null ? 30 : argv['t'];
 
 var tokens;
 try {
@@ -300,15 +301,15 @@ async function start()
   console.log(chalk.blueBright('Classes (non-specific section): ') + classes.classes);
   console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
   // Initial sbInit call
-  console.log(chalk.cyan('Starting the loop, you will receive updates every 30 minutes!'));
+  console.log(chalk.cyan('Starting the loop, you will receive updates every ' + updateTime + ' minutes!'));
   console.log(chalk.cyan('Starting a query...\nPress CTRL + C anytime to quit!'));
-  await sbInit();
 
+  await sbInit();
   // Start the loop for calling every half an hour!
   setInterval(async function() {
     console.log(chalk.cyan('Starting a query...\nPress CTRL + C anytime to quit!'));
     sbInit();
-  }, 1800000);
+  }, updateTime * 60 * 1000);
 }
 
 function exit()
