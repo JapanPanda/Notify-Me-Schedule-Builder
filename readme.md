@@ -5,12 +5,14 @@ This is a node.js app that notifies you via push notification (on desktop, ios, 
 It'll send updates every 30 minutes to you if there are classes open.
 
 ## How To Run This?
-All you need is a simple one-liner `npm app.js` and it'll send updates every 30 minutes (only if classes are available to avoid spam).
+All you need is a simple one-liner `node app.js` and it'll send updates every 30 minutes (only if classes are available to avoid spam).
 
 I suggest using the npm package [forever](https://www.npmjs.com/package/forever) to have this script run in the background.
 
 Alternatively, if you wanna save on your electricity bill (since you're a poor student like me!),
 you can run this on your own personal server 24/7 rather than a home setup (and get updates 24/7).
+
+To run it in verbose mode (see what's happening within each query), run `node app.js -v`.
 
 ## What Do I Need?
 Well, you need node.js installed and npm installed on a *LINUX* distro or *MAC* setup.
