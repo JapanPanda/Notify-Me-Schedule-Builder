@@ -9,12 +9,26 @@ var $ = require('cheerio');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const chalk = require('chalk');
-const tokens = require('./tokens.json');
-const classes = require('./classes.json');
 const pushbulleturl = 'https://api.pushbullet.com/v2/pushes';
 const sburl = 'https://cas.ucdavis.edu/cas/login?service=https%3A%2F%2Fmy%2Eucdavis%2Eedu%2Fschedulebuilder%2Findex%2Ecfm%3Fsb';
 var argv = require('minimist')(process.argv.slice(2));
 const verbose = argv['v'];
+
+var tokens;
+try {
+tokens = require('./tokens.json');
+}
+catch (err) {
+  tokens = null;
+}
+
+var classes;
+try {
+  classes = require('./classes.json');
+}
+catch (err) {
+  classes = null;
+}
 
 async function sendPushBullet(open_classes) {
   var message = 'Some open classes have been found: \n';
@@ -86,10 +100,15 @@ async function scrapeClasses(page, resultsJSON) {
     await page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]');
     await page.waitFor(1000);
     var divs = await page.$$('.data-item-short');
-    while (divs.length == 0) {
-        // Theres a weird bug here where the results don't show up sometime
+    var errorCounter = 0;
+    while (divs.length == 0 && errorCounter < 10) {
+        // Keep pressing the button if the results are empty since we might've not waited long enough
+        var error = await page.$('.register_by_crn_tour_step0_content_error');  // Check to see if there are no results
+        if (error != null) {
+          throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
+        }
         if (verbose)
-          console.log(chalk.red('Could not load the search results, trying again...'));
+          console.log(chalk.red(10 - errorCounter + ' tries left: ' + 'Could not load the search results, trying again...'));
         await page.screenshot({path: './debug/screenshots/error.png'});
         await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
         await Promise.all([
@@ -97,6 +116,11 @@ async function scrapeClasses(page, resultsJSON) {
           page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
         ]);
         divs = await page.$$('.data-item-short');
+        errorCounter++;
+    }
+    if (errorCounter >= 10) { // Time out so we don't get stuck in a loop
+      throw new Error('Could not load the search results after 10 attempts\nCheck if ' + chalk.underline(currClass) +
+      ' is verbatim from Schedule Builder');
     }
 
     var classesJSON = [];
@@ -118,6 +142,7 @@ async function scrapeClasses(page, resultsJSON) {
   }
 }
 
+// Documentation is the same as the above function pretty much
 async function scrapeSpecificSections(page, resultsJSON) {
   for (const currSection of classes.specific_sections) {
     var class_name = currSection.split(' ').splice(0, 2).join(' ');
@@ -125,7 +150,12 @@ async function scrapeSpecificSections(page, resultsJSON) {
     await page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]');
     await page.waitFor(1000);
     var divs = await page.$$('.data-item-short');
-    while (divs.length == 0) {
+    var errorCounter = 0;
+    while (divs.length == 0 && errorCounter < 10) {
+        var error = await page.$('.register_by_crn_tour_step0_content_error');
+        if (error != null) {
+          throw new Error('Could not find the class ' + chalk.underline(currSection) + '.\nPlease make sure ' + chalk.underline(currSection) + ' is verbatim from Schedule Builder');
+        }
         if (verbose)
           console.log(chalk.red('Could not load the search results, trying again...'));
         await page.screenshot({path: './debug/screenshots/error.png'});
@@ -135,21 +165,32 @@ async function scrapeSpecificSections(page, resultsJSON) {
           page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
         ]);
         divs = await page.$$('.data-item-short');
+        errorCounter++;
+    }
+    if (errorCounter >= 10) {
+      throw new Error('Could not load the search results after 10 attempts\nCheck if ' + chalk.underline(currSection) +
+      ' is verbatim from Schedule Builder');
     }
 
     var classesJSON;
+    var sectionFound = false;
     for (const div of divs) {
       var currObj = await (await div.getProperty('innerHTML')).jsonValue();
       $ = $.load(currObj);
       var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
       className = className.substring(0, className.length - 1);
       if (className == currSection) {
+        sectionFound = true;
         var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
         classesJSON = {
           'class_name': className,
           'class_spots': classSpots
         }
       }
+    }
+    if (!sectionFound) {
+      throw new Error('Could not find the section ' + chalk.underline(currSection) + ' in the search results!\n'
+      + 'Please make sure ' + chalk.underline(currSection) + ' is verbatim from Schedule Builder');
     }
     if (verbose)
       console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
@@ -238,6 +279,7 @@ async function sbInit() {
       console.log(chalk.red(err.stack));
       console.log(chalk.red('Closing Puppeteer...'));
       await browser.close();
+      exit();
     }
   });
   // Posting to the search url results in some really really hard to parse (unreadable) information, so we'll just use puppeteer to scrape
