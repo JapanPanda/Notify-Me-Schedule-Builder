@@ -98,8 +98,10 @@ async function scrapeClasses(page, resultsJSON) {
     var errorCounter = 0;
     while (divs.length == 0 && errorCounter < 10) {
         // Keep pressing the button if the results are empty since we might've not waited long enough
-        var error = await page.$('.register_by_crn_tour_step0_content_error');  // Check to see if there are no results
-        if (error != null) {
+        var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue();  // Check to see if there are no results
+        if (error == 'No results found that matched your search criteria') {
+          await page.screenshot({path: './debug/screenshots/error.png'});
+          await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
           throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
         }
         if (verbose)
@@ -147,9 +149,11 @@ async function scrapeSpecificSections(page, resultsJSON) {
     var divs = await page.$$('.data-item-short');
     var errorCounter = 0;
     while (divs.length == 0 && errorCounter < 10) {
-        var error = await page.$('.register_by_crn_tour_step0_content_error');
-        if (error != null) {
-          throw new Error('Could not find the class ' + chalk.underline(currSection) + '.\nPlease make sure ' + chalk.underline(currSection) + ' is verbatim from Schedule Builder');
+        var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue();
+        if (error == 'No results found that matched your search criteria') {
+          await page.screenshot({path: './debug/screenshots/error.png'});
+          await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
+          throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
         }
         if (verbose)
           console.log(chalk.red('Could not load the search results, trying again...'));
@@ -218,7 +222,7 @@ async function sort(resultsJSON) {
 // Had to use a headless browser since request wasn't good enough to load the client-side javascript
 async function sbInit() {
   if (verbose)
-    console.log(chalk.cyan('Attempting to log into Schedule Builder...'));
+    console.log(chalk.cyan('\nAttempting to log into Schedule Builder...'));
 
   await puppeteer.launch().then(async browser => {
     try {
@@ -252,19 +256,30 @@ async function sbInit() {
       if (verbose)
         console.log(chalk.cyan('Beginning to query for general classes...'));
       // For the non-specific section classes
-      await scrapeClasses(page, resultsJSON);
+      if (classes.hasOwnProperty('classes') && classes['classes'].length > 0)
+        await scrapeClasses(page, resultsJSON);
+      else if (verbose && classes.hasOwnProperty('classes') && classes['classes'].length === 0)
+        console.log(chalk.red('Skipping query for general classes since it\'s empty in classes.json'));
+      else if (verbose && !classes.hasOwnProperty('classes'))
+        console.log(chalk.red('Skipping query for general classes since it\'s not included in classes.json'));
 
       if (verbose)
         console.log(chalk.cyan('\nBeginning to query for specific sections...'));
       // For the specific sections
-      await scrapeSpecificSections(page, resultsJSON);
-
+      if (classes.hasOwnProperty('specific_sections') && classes['specific_sections'].length > 0)
+        await scrapeSpecificSections(page, resultsJSON);
+      else if (verbose && classes.hasOwnProperty('specific_sections') && classes['specific_sections'].length === 0)
+        console.log(chalk.red('Skipping query for specific sections since it\'s empty in classes.json'));
+      else if (verbose && !classes.hasOwnProperty('specific_sections'))
+        console.log(chalk.red('Skipping query for specific sections since it\'s not included in classes.json'));
       // Get the open classes from JSON
       await sort(resultsJSON);
 
       if (resultsJSON['open_classes'].length > 0) {
         await sendPushBullet(resultsJSON['open_classes']);
       }
+      else if (verbose)
+        console.log(chalk.cyan('\nNo open classes found, so not sending Push notification...'));
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
@@ -302,12 +317,12 @@ async function start()
   console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
   // Initial sbInit call
   console.log(chalk.cyan('Starting the loop, you will receive updates every ' + updateTime + ' minutes!'));
-  console.log(chalk.cyan('Starting a query...\nPress CTRL + C anytime to quit!'));
+  console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
 
   await sbInit();
   // Start the loop for calling every half an hour!
   setInterval(async function() {
-    console.log(chalk.cyan('Starting a query...\nPress CTRL + C anytime to quit!'));
+    console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
     sbInit();
   }, updateTime * 60 * 1000);
 }
