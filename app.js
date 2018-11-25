@@ -3,6 +3,7 @@ var $ = require('cheerio');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const chalk = require('chalk');
+const _ = require('lodash');
 const pushbulleturl = 'https://api.pushbullet.com/v2/pushes';
 const sburl = 'https://cas.ucdavis.edu/cas/login?service=https%3A%2F%2Fmy%2Eucdavis%2Eedu%2Fschedulebuilder%2Findex%2Ecfm%3Fsb';
 var argv = require('minimist')(process.argv.slice(2));
@@ -274,11 +275,22 @@ async function sbInit() {
       // Get the open classes from JSON
       await sort(resultsJSON);
 
-      if (resultsJSON['open_classes'].length > 0) {
+      var prevResults;
+      try {
+        prevResults = require('./results.json');
+      }
+      catch (err) {
+        prevResults = null;
+      }
+
+      if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
         await sendPushBullet(resultsJSON['open_classes']);
       }
+      else if (resultsJSON['open_classes'].length > 0 && _.isEqual(resultsJSON, prevResults)) {
+        console.log(chalk.cyan('No update from previous push notification, so not sending push notification'));
+      }
       else
-        console.log(chalk.cyan('\nNo open classes found, so not sending Push notification...'));
+        console.log(chalk.cyan('\nNo open classes found, so not sending push notification...'));
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
