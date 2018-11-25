@@ -7,6 +7,10 @@ It'll send updates every 30 minutes to you if there are classes open.
 ## How To Run This?
 All you need is a simple one-liner `node app.js` and it'll send updates every 30 minutes (only if classes are available to avoid spam).
 
+If you want to customize how many times it should send updates, run `node app.js -t -insert minutes here-`.
+
+Example: `node app.js -t 10` will send updates every 10 minutes. *I strongly do not recommend values under 1 minute.*
+
 I suggest using the npm package [forever](https://www.npmjs.com/package/forever) to have this script run in the background.
 
 Alternatively, if you wanna save on your electricity bill (since you're a poor student like me!),
