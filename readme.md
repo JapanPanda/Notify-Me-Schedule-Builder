@@ -1,13 +1,20 @@
 # Notify Me! Schedule Builder (UC Davis) Push Notification App
 ## What Is This?
-This is a work in progress app that notifies you via push notification (on desktop, ios, and android) when a spot opens up in a class.
+This is a node.js app that notifies you via push notification (on desktop, ios, and android) when a spot opens up in a class.
+
+It'll send updates every 30 minutes to you if there are classes open.
 
 ## How To Run This?
-Well for now, it's not done yet but it'll be a simple one-liner `npm app.js`.
-Alternatively, if you wanna save your electricity bill (since you're a poor student like me!),
+All you need is a simple one-liner `npm app.js` and it'll send updates every 30 minutes (only if classes are available to avoid spam).
+
+I suggest using the npm package [forever](https://www.npmjs.com/package/forever) to have this script run in the background.
+
+Alternatively, if you wanna save on your electricity bill (since you're a poor student like me!),
 you can run this on your own personal server 24/7 rather than a home setup (and get updates 24/7).
 
 ## What Do I Need?
+Well, you need node.js installed and npm installed on a *LINUX* distro or *MAC* setup.
+
 All the npm packages can be installed with a simple `npm install`
 
 PushBullet must be installed on the platform you wish to receive notifications on.
