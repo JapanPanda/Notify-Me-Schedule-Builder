@@ -68,14 +68,106 @@ function getTerm(date) {
   }
 }
 
+async function scrapeClasses(page, resultsJSON) {
+  for (const currClass of classes.classes) {
+    await page.$eval('#inline_course_number', (ele, currClass) => ele.value = currClass, currClass);
+    await page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]');
+    await page.waitFor(1000);
+    var divs = await page.$$('.data-item-short');
+    while (divs.length == 0) {
+        // Theres a weird bug here where the results don't show up sometime
+        console.log(chalk.red('Could not load the search results, trying again...'));
+        await page.screenshot({path: './debug/screenshots/error.png'});
+        await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
+        await Promise.all([
+          page.waitFor(3000),
+          page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
+        ]);
+        divs = await page.$$('.data-item-short');
+    }
+
+    var classesJSON = [];
+    for (const div of divs) {  // Separate the class divs and break it down into JSON objects
+      var currObj = await (await div.getProperty('innerHTML')).jsonValue();
+      $ = $.load(currObj);
+      var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
+      className = className.substring(0, className.length - 1);
+      var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
+      var parsedObj = {
+        'class_name': className,
+        'class_spots': classSpots
+      }
+      classesJSON.push(parsedObj);
+    }
+
+    console.log(chalk.cyan('Logging JSON for ' + currClass + ' into results.json...'));
+    resultsJSON['classes'][currClass] = classesJSON;
+  }
+}
+
+async function scrapeSpecificSections(page, resultsJSON) {
+  for (const currSection of classes.specific_sections) {
+    var class_name = currSection.split(' ').splice(0, 2).join(' ');
+    await page.$eval('#inline_course_number', (ele, currSection) => ele.value = currSection, class_name);
+    await page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]');
+    await page.waitFor(1000);
+    var divs = await page.$$('.data-item-short');
+    while (divs.length == 0) {
+        console.log(chalk.red('Could not load the search results, trying again...'));
+        await page.screenshot({path: './debug/screenshots/error.png'});
+        await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
+        await Promise.all([
+          page.waitFor(3000),
+          page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
+        ]);
+        divs = await page.$$('.data-item-short');
+    }
+
+    var classesJSON;
+    for (const div of divs) {
+      var currObj = await (await div.getProperty('innerHTML')).jsonValue();
+      $ = $.load(currObj);
+      var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
+      className = className.substring(0, className.length - 1);
+      if (className == currSection) {
+        var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
+        classesJSON = {
+          'class_name': className,
+          'class_spots': classSpots
+        }
+      }
+    }
+
+    console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
+    resultsJSON['specific_sections'][currSection] = classesJSON;
+  }
+}
+
+async function sort(resultsJSON) {
+  console.log(chalk.cyan('\nLogging open classes into results.json...'));
+  for (const classes in resultsJSON['classes']) {
+    for (const sections in resultsJSON['classes'][classes]) {
+      var section = resultsJSON['classes'][classes][sections];
+      if (parseInt(section['class_spots']) > 0) {
+        console.log(chalk.blueBright('- ' + section['class_name']));
+        resultsJSON['open_classes'].push(section);
+      }
+    }
+  }
+  for (const classes in resultsJSON['specific_sections']) {
+    if (parseInt(resultsJSON['specific_sections'][classes]['class_spots']) > 0) {
+      console.log(chalk.blueBright('- ' + resultsJSON['specific_sections'][classes]['class_name']));
+      resultsJSON['open_classes'].push(resultsJSON['specific_sections'][classes]);
+    }
+  }
+}
+
 // Had to use a headless browser since request wasn't good enough to load the client-side javascript
 async function sbInit() {
   console.log(chalk.cyan('Attempting to log into Schedule Builder...'));
 
   await puppeteer.launch().then(async browser => {
     try {
-      var username = tokens.username;
-      var password = tokens.password;
       const page = await browser.newPage();
       // Login
       await page.goto(sburl);
@@ -95,85 +187,23 @@ async function sbInit() {
       ]);
 
       console.log(chalk.cyan('Successfully entered the quarter\n'));
+
       var resultsJSON = {
         'classes': {},
-        'specific_sections': {}
+        'specific_sections': {},
+        'open_classes': []
       };
 
       console.log(chalk.cyan('Beginning to query for general classes...'));
       // For the non-specific section classes
-      for (const currClass of classes.classes) {
-        await page.$eval('#inline_course_number', (ele, currClass) => ele.value = currClass, currClass);
-        await page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]');
-        await page.waitFor(1000);
-        var divs = await page.$$('.data-item-short');
-        while (divs.length == 0) {
-            // Theres a weird bug here where the results don't show up sometime
-            console.log(chalk.red('Could not load the search results, trying again...'));
-            await page.screenshot({path: './debug/screenshots/error.png'});
-            await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
-            await Promise.all([
-              page.waitFor(3000),
-              page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
-            ]);
-            divs = await page.$$('.data-item-short');
-        }
-
-        var classesJSON = [];
-        for (const div of divs) {  // Separate the class divs and break it down into JSON objects
-          var currObj = await (await div.getProperty('innerHTML')).jsonValue();
-          $ = $.load(currObj);
-          var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
-          className = className.substring(0, className.length - 1);
-          var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
-          var parsedObj = {
-            'class_name': className,
-            'class_spots': classSpots
-          }
-          classesJSON.push(parsedObj);
-        }
-
-        console.log(chalk.cyan('Logging JSON for ' + currClass + ' into results.json...'));
-        resultsJSON['classes'][currClass] = classesJSON;
-      }
+      await scrapeClasses(page, resultsJSON);
 
       console.log(chalk.cyan('\nBeginning to query for specific sections...'));
       // For the specific sections
-      for (const currSection of classes.specific_sections) {
-        var class_name = currSection.split(' ').splice(0, 2).join(' ');
-        await page.$eval('#inline_course_number', (ele, currSection) => ele.value = currSection, class_name);
-        await page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]');
-        await page.waitFor(1000);
-        var divs = await page.$$('.data-item-short');
-        while (divs.length == 0) {
-            console.log(chalk.red('Could not load the search results, trying again...'));
-            await page.screenshot({path: './debug/screenshots/error.png'});
-            await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
-            await Promise.all([
-              page.waitFor(3000),
-              page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
-            ]);
-            divs = await page.$$('.data-item-short');
-        }
+      await scrapeSpecificSections(page, resultsJSON);
 
-        var classesJSON;
-        for (const div of divs) {
-          var currObj = await (await div.getProperty('innerHTML')).jsonValue();
-          $ = $.load(currObj);
-          var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
-          className = className.substring(0, className.length - 1);
-          if (className == currSection) {
-            var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
-            classesJSON = {
-              'class_name': className,
-              'class_spots': classSpots
-            }
-          }
-        }
-
-        console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
-        resultsJSON['specific_sections'][currSection] = classesJSON;
-      }
+      // Get the open classes from JSON
+      await sort(resultsJSON);
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
@@ -192,10 +222,18 @@ async function start()
 {
   console.log(chalk.cyan('Starting the server now...'));
   console.log(chalk.cyan('Attempting to read tokens.json file...'));
+  if (tokens === null) {
+    console.log(chalk.red('Error: Could not read tokens.json...\nMake sure it exists and follows the format on the github repo!'));
+    exit();
+  }
   console.log(chalk.blueBright('Username: ') + tokens.username);
   console.log(chalk.blueBright('Password: ') + tokens.password);
   console.log(chalk.blueBright('PushBullet Token: ') + tokens.pushbullet_token + '\n');
   console.log(chalk.cyan('Attempting to read classes.json file...'));
+  if (classes === null) {
+      console.log(chalk.red('Error: Could not read classes.json...\nMake sure it exists and follows the format on the github repo!'));
+      exit();
+  }
   console.log(chalk.blueBright('Classes (non-specific section): ') + classes.classes);
   console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
   await sbInit();  // Good ol' procedural programming
@@ -205,6 +243,7 @@ async function start()
 function exit()
 {
   console.log(chalk.red('Closing server now...'));
+  process.exit();
 }
 
 start();
