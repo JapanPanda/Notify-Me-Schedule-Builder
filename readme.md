@@ -4,6 +4,11 @@ This is a node.js app that notifies you via push notification (on desktop, ios, 
 
 It'll send updates every 30 minutes to you if there are classes open.
 
+## Preview of Message
+<p align="center">
+  <img src="https://i.imgur.com/OL3iTii.jpg"/>
+</p>
+
 ## How To Run This?
 All you need is a simple one-liner `node app.js` and it'll send updates every 30 minutes (only if classes are available to avoid spam).
 
@@ -58,7 +63,6 @@ For classes where you want a specific section, put the whole name including the 
   ]
 }
 ```
-
 
 ## Privacy Disclosure
 This app WILL NOT give me any access to whatever information you have since you will be running it on your own computer or server.
