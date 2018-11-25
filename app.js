@@ -316,11 +316,15 @@ async function start()
   console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
   // Initial sbInit call
   console.log(chalk.cyan('Starting the loop, you will receive updates every ' + updateTime + ' minutes!'));
+  var currDate = new Date();
+  console.log(chalk.yellow(currDate));
   console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
 
   await sbInit();
   // Start the loop for calling every half an hour!
   setInterval(async function() {
+    currDate = new Date();
+    console.log(chalk.yellow(currDate));
     console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
     sbInit();
   }, updateTime * 60 * 1000);
