@@ -1,10 +1,4 @@
 var rp = require('request-promise');
-var jar = rp.jar();
-var rp = rp.defaults({
-  jar: jar,
-  followAllRedirects: true
-});
-
 var $ = require('cheerio');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -16,7 +10,7 @@ const verbose = argv['v'];
 
 var tokens;
 try {
-tokens = require('./tokens.json');
+  tokens = require('./tokens.json');
 }
 catch (err) {
   tokens = null;
@@ -78,7 +72,7 @@ function getTerm(date) {
       console.log(chalk.cyan('Entering into Spring quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear())) + '03';
   }
-  else if (date.getMonth() >= 4 && date.getMonth() <= 6) {  // NOt sure how summer registration works, will confirm later
+  else if (date.getMonth() >= 4 && date.getMonth() <= 6) {  // Not sure how summer registration works, will confirm later
     if (verbose)
       console.log(chalk.cyan('Entering into Summer Session I since it is month ' + date.getMonth() + '...'));
     return 'Summer Session I ' + (parseInt(date.getFullYear()));
