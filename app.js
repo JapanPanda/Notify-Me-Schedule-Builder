@@ -14,16 +14,14 @@ const reminder = argv['r'];
 var tokens;
 try {
   tokens = require('./tokens.json');
-}
-catch (err) {
+} catch (err) {
   tokens = null;
 }
 
 var classes;
 try {
   classes = require('./classes.json');
-}
-catch (err) {
+} catch (err) {
   classes = null;
 }
 
@@ -62,23 +60,19 @@ function getTerm(date) {
     if (verbose)
       console.log(chalk.cyan('Entering into Winter quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear()) + 1) + '01';
-  }
-  else if (date.getMonth() >= 1 && date.getMonth() <= 3) {
+  } else if (date.getMonth() >= 1 && date.getMonth() <= 3) {
     if (verbose)
       console.log(chalk.cyan('Entering into Spring quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear())) + '03';
-  }
-  else if (date.getMonth() >= 4 && date.getMonth() <= 6) {  // Not sure how summer registration works, will confirm later
+  } else if (date.getMonth() >= 4 && date.getMonth() <= 6) { // Not sure how summer registration works, will confirm later
     if (verbose)
       console.log(chalk.cyan('Entering into Summer Session I since it is month ' + date.getMonth() + '...'));
     return 'Summer Session I ' + (parseInt(date.getFullYear()));
-  }
-  else if (date.getMonth() >= 7 && date.getMonth() <= 9) {
+  } else if (date.getMonth() >= 7 && date.getMonth() <= 9) {
     if (verbose)
       console.log(chalk.cyan('Entering into Fall Quarter since it is month ' + date.getMonth() + '...'));
     return (parseInt(date.getFullYear()) + 1) + '10';
-  }
-  else {
+  } else {
     console.log(chalk.red('It\'s a bit early to set up this program right now for Spring quarter registration...\nTry again next month'));
     throw new Error('Too early!');
   }
@@ -92,31 +86,35 @@ async function scrapeClasses(page, resultsJSON) {
     var divs = await page.$$('.data-item-short');
     var errorCounter = 0;
     while (divs.length == 0 && errorCounter < 10) {
-        // Keep pressing the button if the results are empty since we might've not waited long enough
-        var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue();  // Check to see if there are no results
-        if (error == 'No results found that matched your search criteria') {
-          await page.screenshot({path: './debug/screenshots/error.png'});
-          await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
-          throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
-        }
-        if (verbose)
-          console.log(chalk.red(10 - errorCounter + ' tries left: ' + 'Could not load the search results, trying again...'));
-        await page.screenshot({path: './debug/screenshots/error.png'});
+      // Keep pressing the button if the results are empty since we might've not waited long enough
+      var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue(); // Check to see if there are no results
+      if (error == 'No results found that matched your search criteria') {
+        await page.screenshot({
+          path: './debug/screenshots/error.png'
+        });
         await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
-        await Promise.all([
-          page.waitFor(3000),
-          page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
-        ]);
-        divs = await page.$$('.data-item-short');
-        errorCounter++;
+        throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
+      }
+      if (verbose)
+        console.log(chalk.red(10 - errorCounter + ' tries left: ' + 'Could not load the search results, trying again...'));
+      await page.screenshot({
+        path: './debug/screenshots/error.png'
+      });
+      await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
+      await Promise.all([
+        page.waitFor(3000),
+        page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
+      ]);
+      divs = await page.$$('.data-item-short');
+      errorCounter++;
     }
     if (errorCounter >= 10) { // Time out so we don't get stuck in a loop
       throw new Error('Could not load the search results after 10 attempts\nCheck if ' + chalk.underline(currClass) +
-      ' is verbatim from Schedule Builder');
+        ' is verbatim from Schedule Builder');
     }
 
     var classesJSON = [];
-    for (const div of divs) {  // Separate the class divs and break it down into JSON objects
+    for (const div of divs) { // Separate the class divs and break it down into JSON objects
       var currObj = await (await div.getProperty('innerHTML')).jsonValue();
       $ = $.load(currObj);
       var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
@@ -144,26 +142,30 @@ async function scrapeSpecificSections(page, resultsJSON) {
     var divs = await page.$$('.data-item-short');
     var errorCounter = 0;
     while (divs.length == 0 && errorCounter < 10) {
-        var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue();
-        if (error == 'No results found that matched your search criteria') {
-          await page.screenshot({path: './debug/screenshots/error.png'});
-          await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
-          throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
-        }
-        if (verbose)
-          console.log(chalk.red('Could not load the search results, trying again...'));
-        await page.screenshot({path: './debug/screenshots/error.png'});
+      var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue();
+      if (error == 'No results found that matched your search criteria') {
+        await page.screenshot({
+          path: './debug/screenshots/error.png'
+        });
         await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
-        await Promise.all([
-          page.waitFor(3000),
-          page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
-        ]);
-        divs = await page.$$('.data-item-short');
-        errorCounter++;
+        throw new Error('Could not find the class ' + chalk.underline(currClass) + '.\nPlease make sure ' + chalk.underline(currClass) + ' is verbatim from Schedule Builder');
+      }
+      if (verbose)
+        console.log(chalk.red('Could not load the search results, trying again...'));
+      await page.screenshot({
+        path: './debug/screenshots/error.png'
+      });
+      await fs.writeFileSync('./debug/error.json', await page.evaluate(() => document.body.innerHTML), 'utf8');
+      await Promise.all([
+        page.waitFor(3000),
+        page.click('button[onclick="javascript:UCD.SAOT.COURSES_SEARCH_INLINE.textSearch();"]')
+      ]);
+      divs = await page.$$('.data-item-short');
+      errorCounter++;
     }
     if (errorCounter >= 10) {
       throw new Error('Could not load the search results after 10 attempts\nCheck if ' + chalk.underline(currSection) +
-      ' is verbatim from Schedule Builder');
+        ' is verbatim from Schedule Builder');
     }
 
     var classesJSON;
@@ -183,8 +185,8 @@ async function scrapeSpecificSections(page, resultsJSON) {
       }
     }
     if (!sectionFound) {
-      throw new Error('Could not find the section ' + chalk.underline(currSection) + ' in the search results!\n'
-      + 'Please make sure ' + chalk.underline(currSection) + ' is verbatim from Schedule Builder');
+      throw new Error('Could not find the section ' + chalk.underline(currSection) + ' in the search results!\n' +
+        'Please make sure ' + chalk.underline(currSection) + ' is verbatim from Schedule Builder');
     }
     if (verbose)
       console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
@@ -273,8 +275,7 @@ async function sbInit() {
       var prevResults;
       try {
         prevResults = require('./results.json');
-      }
-      catch (err) {
+      } catch (err) {
         prevResults = null;
       }
 
@@ -287,17 +288,14 @@ async function sbInit() {
         message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
         title = 'Notify Me! Open Classes Found';
         await sendPushBullet(title, message);
-      }
-      else if (resultsJSON['open_classes'].length > 0 && _.isEqual(resultsJSON, prevResults)) {
+      } else if (resultsJSON['open_classes'].length > 0 && _.isEqual(resultsJSON, prevResults)) {
         console.log(chalk.cyan('No update from previous push notification, so not sending push notification'));
-      }
-      else
+      } else
         console.log(chalk.cyan('\nNo open classes found, so not sending push notification...'));
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
-    }
-    catch (err) {
+    } catch (err) {
       console.log(chalk.red('Something went wrong inside of Puppeteer...'));
       console.log(chalk.red(err.stack));
       console.log(chalk.red('Closing Puppeteer...'));
@@ -311,8 +309,7 @@ async function sbInit() {
   // Posting to the search url results in some really really hard to parse (unreadable) information, so we'll just use puppeteer to scrape
 }
 
-async function start()
-{
+async function start() {
   if (verbose)
     console.log(chalk.cyan('Verbose mode activated'));
   console.log(chalk.cyan('Starting the server now...'));
@@ -326,8 +323,8 @@ async function start()
   console.log(chalk.blueBright('PushBullet Token: ') + tokens.pushbullet_token + '\n');
   console.log(chalk.cyan('Attempting to read classes.json file...'));
   if (classes === null) {
-      console.log(chalk.red('Error: Could not read classes.json...\nMake sure it exists and follows the format on the github repo!'));
-      exit();
+    console.log(chalk.red('Error: Could not read classes.json...\nMake sure it exists and follows the format on the github repo!'));
+    exit();
   }
   console.log(chalk.blueBright('Classes (non-specific section): ') + classes.classes);
   console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
@@ -346,10 +343,10 @@ async function start()
     message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
     var title = 'Notify Me! Daily Reminder';
     sendPushBullet(title, message);
-    
+
     setInterval(function() {
       console.log(chalk.cyan('Sending a daily reminder...'));
-      var message = 'This is a daily reminder that Notify Me! is still running!';
+      var message = 'This is a daily reminder that Notify Me! is still running!\n';
       message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
       var title = 'Notify Me! Daily Reminder';
       sendPushBullet(title, message);
@@ -364,8 +361,7 @@ async function start()
   }, updateTime * 60 * 1000);
 }
 
-function exit()
-{
+function exit() {
   console.log(chalk.red('Closing server now...'));
   process.exit();
 }
