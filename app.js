@@ -184,12 +184,15 @@ async function scrapeSpecificSections(page, resultsJSON) {
         }
       }
     }
+
     if (!sectionFound) {
       throw new Error('Could not find the section ' + chalk.underline(currSection) + ' in the search results!\n' +
         'Please make sure ' + chalk.underline(currSection) + ' is verbatim from Schedule Builder');
     }
+
     if (verbose)
       console.log(chalk.cyan('Logging JSON for ' + currSection + ' into results.json...'));
+
     resultsJSON['specific_sections'][currSection] = classesJSON;
   }
 }
@@ -309,6 +312,32 @@ async function sbInit() {
   // Posting to the search url results in some really really hard to parse (unreadable) information, so we'll just use puppeteer to scrape
 }
 
+function readClasses() {
+  try {
+    classes = require('./classes.json');
+  } catch (err) {
+    classes = null;
+  }
+
+  if (classes === null) {
+    console.log(chalk.red('Error: Could not read classes.json...\nMake sure it exists and follows the format on the github repo!'));
+    exit();
+  }
+  var message = chalk.blueBright('Classes (non-specific section): ');
+  if (classes.classes != null && classes.classes.length > 0)
+    message += classes.classes;
+  else
+    message += chalk.red('None found');
+  console.log(message);
+
+  message = chalk.blueBright('Specific Sections: ');
+  if (classes.specific_sections != null && classes.specific_sections.length > 0)
+    message += classes.specific_sections;
+  else
+    message += chalk.red('None found');
+  console.log(message);
+}
+
 async function start() {
   if (verbose)
     console.log(chalk.cyan('Verbose mode activated'));
@@ -319,15 +348,16 @@ async function start() {
     exit();
   }
   console.log(chalk.blueBright('Username: ') + tokens.username);
-  console.log(chalk.blueBright('Password: ') + tokens.password);
+  console.log(chalk.blueBright('Password: -REDACTED-'));
+  console.log(chalk.blueBright('PushBullet Email: ') + tokens.pushbulletEmail);
   console.log(chalk.blueBright('PushBullet Token: ') + tokens.pushbullet_token + '\n');
+
   console.log(chalk.cyan('Attempting to read classes.json file...'));
   if (classes === null) {
     console.log(chalk.red('Error: Could not read classes.json...\nMake sure it exists and follows the format on the github repo!'));
     exit();
   }
-  console.log(chalk.blueBright('Classes (non-specific section): ') + classes.classes);
-  console.log(chalk.blueBright('Specific Sections: ') + classes.specific_sections + '\n');
+  readClasses();
   // Initial sbInit call
   console.log(chalk.cyan('Starting the loop, you will receive updates every ' + updateTime + ' minutes!'));
   var currDate = new Date();
@@ -354,6 +384,9 @@ async function start() {
   }
   // Start the loop for calling every half an hour!
   setInterval(function() {
+    if (verbose)
+      console.log('Checking for any new changes to classes.json before starting a new query...');
+    readClasses();
     currDate = new Date();
     console.log(chalk.yellow(currDate));
     console.log(chalk.cyan('Starting a query...\n') + chalk.yellow('Press CTRL + C anytime to quit!'));
