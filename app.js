@@ -354,7 +354,6 @@ async function start() {
 
   await sbInit();
 
-  await sbInit();
   // Remind user that this is still on
   if (reminder) {
     console.log(chalk.cyan('Sending a daily reminder...'));
