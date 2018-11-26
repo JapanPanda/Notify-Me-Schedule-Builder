@@ -268,8 +268,14 @@ async function sbInit() {
       // Get the open classes from JSON
       await sort(resultsJSON);
 
-      var prevResults = JSON.parse(fs.readFileSync('./results.json', 'utf-8'));
-
+      var prevResults;
+      try {
+        prevResults = JSON.parse(fs.readFileSync('./results.json', 'utf-8'));
+      }
+      catch (err) {
+        prevResults = null;
+      }
+      
       if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
         var message = 'Some open classes have been found: \n';
         var open_classes = resultsJSON['open_classes'];
