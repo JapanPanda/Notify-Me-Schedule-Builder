@@ -270,9 +270,6 @@ async function sbInit() {
 
       var prevResults = JSON.parse(fs.readFileSync('./results.json', 'utf-8'));
 
-      console.log(JSON.stringify(resultsJSON, null, 2));
-      console.log(JSON.stringify(prevResults, null, 2));
-
       if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
         var message = 'Some open classes have been found: \n';
         var open_classes = resultsJSON['open_classes'];
