@@ -18,13 +18,6 @@ try {
   tokens = null;
 }
 
-var classes;
-try {
-  classes = require('./classes.json');
-} catch (err) {
-  classes = null;
-}
-
 async function sendPushBullet(title, message) {
   var pushOptions = {
     method: 'POST',
@@ -275,12 +268,10 @@ async function sbInit() {
       // Get the open classes from JSON
       await sort(resultsJSON);
 
-      var prevResults;
-      try {
-        prevResults = require('./results.json');
-      } catch (err) {
-        prevResults = null;
-      }
+      var prevResults = JSON.parse(fs.readFileSync('./results.json', 'utf-8'));
+
+      console.log(JSON.stringify(resultsJSON, null, 2));
+      console.log(JSON.stringify(prevResults, null, 2));
 
       if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
         var message = 'Some open classes have been found: \n';
@@ -314,7 +305,7 @@ async function sbInit() {
 
 function readClasses() {
   try {
-    classes = require('./classes.json');
+    classes = JSON.parse(fs.readFileSync('./classes.json', 'utf8'));
   } catch (err) {
     classes = null;
   }
@@ -353,11 +344,8 @@ async function start() {
   console.log(chalk.blueBright('PushBullet Token: ') + tokens.pushbullet_token + '\n');
 
   console.log(chalk.cyan('Attempting to read classes.json file...'));
-  if (classes === null) {
-    console.log(chalk.red('Error: Could not read classes.json...\nMake sure it exists and follows the format on the github repo!'));
-    exit();
-  }
   readClasses();
+
   // Initial sbInit call
   console.log(chalk.cyan('Starting the loop, you will receive updates every ' + updateTime + ' minutes!'));
   var currDate = new Date();
@@ -366,6 +354,7 @@ async function start() {
 
   await sbInit();
 
+  await sbInit();
   // Remind user that this is still on
   if (reminder) {
     console.log(chalk.cyan('Sending a daily reminder...'));
@@ -385,7 +374,7 @@ async function start() {
   // Start the loop for calling every half an hour!
   setInterval(function() {
     if (verbose)
-      console.log('Checking for any new changes to classes.json before starting a new query...');
+      console.log(chalk.cyan('Checking for any new changes to classes.json before starting a new query...'));
     readClasses();
     currDate = new Date();
     console.log(chalk.yellow(currDate));
