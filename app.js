@@ -346,8 +346,8 @@ async function start() {
     exit();
   }
   console.log(chalk.blueBright('Username: ') + tokens.username);
-  console.log(chalk.blueBright('Password: -REDACTED-'));
-  console.log(chalk.blueBright('PushBullet Email: ') + tokens.pushbulletEmail);
+  console.log(chalk.blueBright('Password: ') + chalk.red('-REDACTED-'));
+  console.log(chalk.blueBright('PushBullet Email: ') + tokens.pushbullet_email);
   console.log(chalk.blueBright('PushBullet Token: ') + tokens.pushbullet_token + '\n');
 
   console.log(chalk.cyan('Attempting to read classes.json file...'));
