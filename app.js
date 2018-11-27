@@ -275,7 +275,7 @@ async function sbInit() {
       catch (err) {
         prevResults = null;
       }
-      
+
       if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
         var message = 'Some open classes have been found: \n';
         var open_classes = resultsJSON['open_classes'];
@@ -322,6 +322,8 @@ function readClasses() {
     message += classes.classes;
   else
     message += chalk.red('None found');
+
+  message = message.replace(/,/g, ', ');
   console.log(message);
 
   message = chalk.blueBright('Specific Sections: ');
@@ -329,6 +331,8 @@ function readClasses() {
     message += classes.specific_sections;
   else
     message += chalk.red('None found');
+
+  message = message.replace(/,/g, ', ');
   console.log(message);
 }
 
@@ -360,7 +364,7 @@ async function start() {
   // Remind user that this is still on
   if (reminder) {
     console.log(chalk.cyan('Sending a daily reminder...'));
-    var message = 'This is a daily reminder that Notify Me! is still running!';
+    var message = 'This is a daily reminder that Notify Me! is still running!\n';
     message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
     var title = 'Notify Me! Daily Reminder';
     sendPushBullet(title, message);
