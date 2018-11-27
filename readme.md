@@ -10,6 +10,8 @@ It'll send updates every 30 minutes to you if there are classes open.
 </p>
 
 ## How To Run This?
+First, make sure you have everything listed in the [What Do I Need?](#what-do-i-need) section.
+
 All you need is a simple one-liner `node app.js` and it'll send updates every 30 minutes (only if classes are available to avoid spam).
 
 If you want to customize how many times it should send updates, run `node app.js -t -insert minutes here-`.
@@ -21,14 +23,17 @@ I suggest using the npm package [forever](https://www.npmjs.com/package/forever)
 Alternatively, if you wanna save on your electricity bill (since you're a poor student like me!),
 you can run this on your own personal server 24/7 rather than a home setup (and get updates 24/7).
 
+## Flags
 To run it in verbose mode (see what's happening within each query), run `node app.js -v`.
 
 To have daily reminders that this program is still running, run `node app.js -r`.
 
 ## What Do I Need?
-Well, you need node.js installed and npm installed on a **LINUX** distro or **macOS** setup.
+Well, you need node.js installed and npm installed on a **Windows** (might be tricky getting this to work), **LINUX** distro, or **macOS** setup. (Google "how to install nodejs on -insert OS here-").
 
-All the npm packages can be installed with a simple `npm install`
+All the npm packages can be installed with a simple `npm install` once you are cd'ed into the directory.
+
+If you wish to make life easier, use **node jsoneditor.js** to create the tokens.json and classes.json files.
 
 PushBullet must be installed on the platform you wish to receive notifications on.
 
@@ -45,6 +50,7 @@ In addition, you will need a classes.json file with the classes you want to keep
   'pushbullet_token': 'pleaseinsertyourtokenhere'
 }
 ```
+**(Just use `node jsoneditor.js` if you're confused)**
 
 ## Getting your PushBullet Token
 Login to [PushBullet Settings](https://www.pushbullet.com/#settings) and generate a token there.
@@ -65,6 +71,7 @@ For classes where you want a specific section, put the whole name including the 
   ]
 }
 ```
+**(Just use `node jsoneditor.js` if you're confused)**
 
 ## Privacy Disclosure
 This app WILL NOT give me any access to whatever information you have since you will be running it on your own computer or server.
