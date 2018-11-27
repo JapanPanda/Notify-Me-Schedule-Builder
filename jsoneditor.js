@@ -7,8 +7,7 @@ var classes;
 function getClasses() {
   try {
     classes = require('./classes.json');
-  }
-  catch (err) {
+  } catch (err) {
     classes = null;
   }
   var classesJSON = classes;
@@ -20,8 +19,7 @@ function getClasses() {
     };
     fs.writeFileSync('./classes.json', JSON.stringify(classesJSON, null, 2));
     console.log(chalk.blueBright('Successfully made a new classes.json file with lots of love <3.'));
-  }
-  else {
+  } else {
     classesJSON = classes;
   }
   return classesJSON;
@@ -70,7 +68,7 @@ function addClass() {
   writeClasses(classesJSON);
   console.log(chalk.cyan('Added the class ') + chalk.blueBright(input) + chalk.cyan('...'));
   console.log(chalk.red('Warning: The class has not been checked for validity inside Schedule Builder, ' +
-  'please ensure that it is a valid class.\n'));
+    'please ensure that it is a valid class.\n'));
 }
 
 function addSection() {
@@ -82,7 +80,7 @@ function addSection() {
   writeClasses(classesJSON);
   console.log(chalk.cyan('Added the class ') + chalk.blueBright(input) + chalk.cyan('...'));
   console.log(chalk.red('Warning: The class has not been checked for validity inside Schedule Builder, ' +
-  'please ensure that it is a valid class.\n'));
+    'please ensure that it is a valid class.\n'));
 }
 
 function deleteClass() {
@@ -91,8 +89,7 @@ function deleteClass() {
   var question;
   if (classesJSON['classes'].length != 0 || classesJSON['specific_sections'].length != 0) {
     question = chalk.cyan('Which class would you like to delete? (Pick a number)\n');
-  }
-  else {
+  } else {
     console.log(chalk.red('Error, there is nothing to delete...\n'));
     return;
   }
@@ -115,24 +112,66 @@ function deleteClass() {
   if (input < classesJSON['classes'].length) {
     console.log(chalk.cyan('Successfully removed ' + classes['classes'][input] + '...'));
     classesJSON['classes'].splice(input, 1);
-  }
-  else {
+  } else {
     console.log(chalk.cyan('Successfully removed ' + classes['specific_sections'][input - classes['classes'].length] + '...'));
     classesJSON['specific_sections'].splice(input - classesJSON['classes'].length, 1);
   }
   writeClasses(classesJSON);
 }
 
+function modifyTokens() {
+  var tokensJSON = {
+    'username': '',
+    'password': '',
+    'pushbullet_email': '',
+    'pushbullet_token': ''
+  };
+
+  var question = chalk.cyan('Please answer the following prompts...\n' +
+    'Kerberos Username (Schedule Builder Login): ');
+  var input = readlineSync.question(question);
+  tokensJSON['username'] = input;
+
+  question = chalk.cyan('Kerberos Password (Schedule Builder Login) (Input is Hidden): ');
+  input = readlineSync.question(question, {
+    hideEchoBack: true
+  });
+  tokensJSON['password'] = input;
+
+  question = chalk.cyan('PushBullet Email (if confused enter help): ');
+  input = readlineSync.question(question);
+  if (input.toLowerCase() === 'help') {
+    question = chalk.cyan('You should have registered on https://www.pushbullet.com/ with an email.\n' +
+      'Please enter this email...\n' +
+      'PushBullet Email: ');
+    input = readlineSync.question(question);
+  }
+  tokensJSON['pushbullet_email'] = input;
+
+  question = chalk.cyan('PushBullet API Token (if confused enter help): ');
+  input = readlineSync.question(question);
+  if (input.toLowerCase() === 'help') {
+    question = chalk.cyan('Please follow the link https://www.pushbullet.com/#settings...\n' +
+      'Then click on "Create Access Token" and copy and paste that into here...\n' +
+      'PushBullet API Token: ');
+    input = readlineSync.question(question);
+  }
+  tokensJSON['pushbullet_token'] = input;
+
+  fs.writeFileSync('./tokens.json', JSON.stringify(tokensJSON, null, 2));
+  console.log(chalk.cyan('Successfully created tokens.json with lots of love <3.\n'));
+}
+
 function ask() {
   // Since question is async and doesn't like blocking, we have to use a recursive loop
   readClasses();
   var question = chalk.cyan('What would you like to do? (Select a number)\n' +
-  '1. Add a class (non-specific)\n' +
-  '2. Add a specific section\n' +
-  '3. Delete a class\n' +
-  '4. Edit tokens.json\n' +
-  '5. Exit the program\n') +
-  '>> ';
+      '1. Add a class (non-specific)\n' +
+      '2. Add a specific section\n' +
+      '3. Delete a class\n' +
+      '4. Edit tokens.json\n' +
+      '5. Exit the program\n') +
+    '>> ';
   var input = readlineSync.question(question);
 
   switch (parseInt(input)) {
@@ -146,7 +185,7 @@ function ask() {
       deleteClass();
       break;
     case 4:
-
+      modifyTokens();
       break;
     case 5:
       exit();
@@ -158,11 +197,15 @@ function ask() {
 }
 
 function start() {
-  getClasses();
+  try {
+    getClasses();
     while (true) {
       ask();
     }
-
+  } catch (err) {
+    console.log(chalk.red('Something went wrong...'));
+    console.log(chalk.red(err.stack));
+  }
 }
 
 function exit() {
