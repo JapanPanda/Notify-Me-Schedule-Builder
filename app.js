@@ -276,7 +276,7 @@ async function sbInit() {
         prevResults = null;
       }
 
-      if (resultsJSON['open_classes'].length > 0 && !_.isEqual(resultsJSON, prevResults)) {
+      if (resultsJSON['open_classes'].length > 0 || !_.isEqual(resultsJSON, prevResults)) {
         var message = 'Some open classes have been found: \n';
         var open_classes = resultsJSON['open_classes'];
         for (const classes in open_classes) {
