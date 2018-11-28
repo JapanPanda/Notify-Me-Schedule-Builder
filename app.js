@@ -276,19 +276,28 @@ async function sbInit() {
         prevResults = null;
       }
 
-      if (resultsJSON['open_classes'].length > 0 || !_.isEqual(resultsJSON, prevResults)) {
-        var message = 'Some open classes have been found: \n';
-        var open_classes = resultsJSON['open_classes'];
-        for (const classes in open_classes) {
-          message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
+      if (!_.isEqual(resultsJSON, prevResults)) {
+        var message = '';
+        var title = '';
+        if (resultsJSON['open_classes'].length == 0) {
+          message = 'Unfortunately, the open spots have all been filled up now.\nYou will be updated when an open spot opens again!\n';
+          message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+          title = 'Notify Me! Spots Have Filled Up';
         }
-        message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
-        title = 'Notify Me! Open Classes Found';
+        else {
+          message = 'Some open classes have been found: \n';
+          var open_classes = resultsJSON['open_classes'];
+          for (const classes in open_classes) {
+            message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
+          }
+          message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+          title = 'Notify Me! Open Classes Found';
+        }
         await sendPushBullet(title, message);
       } else if (resultsJSON['open_classes'].length > 0 && _.isEqual(resultsJSON, prevResults)) {
         console.log(chalk.cyan('No update from previous push notification, so not sending push notification'));
       } else
-        console.log(chalk.cyan('\nNo open classes found, so not sending push notification...'));
+        console.log(chalk.cyan('\nNo open classes found or no change found, so not sending push notification...'));
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
