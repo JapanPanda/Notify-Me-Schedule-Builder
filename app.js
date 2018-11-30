@@ -113,14 +113,14 @@ async function scrapeClasses(page, resultsJSON) {
       var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
       className = className.substring(0, className.length - 1);
       var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
-      // FIXME
-      var classProf = $('');
-      var classProfEmail = $('');
+      $ = $.load($('.data-column').eq(6).html());
+      var classProfEmail = $('a').attr('href').slice(7);
+      var classProfName = $('a').text();
       var parsedObj = {
         'class_name': className,
         'class_spots': classSpots,
-        'class_prof': classProf,
-	'class_prof_email': classProfEmail
+        'class_prof': classProfName,
+	      'class_prof_email': classProfEmail
       }
       classesJSON.push(parsedObj);
     }
@@ -176,13 +176,14 @@ async function scrapeSpecificSections(page, resultsJSON) {
       if (className == currSection) {
         sectionFound = true;
         var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
-        var classProf = $('.data-column').eq(3).text();
-        var classProfEmail = $('.data-column').eq(3).attribs.href.replace('mailto:', '');
+        $ = $.load($('.data-column').eq(6).html());
+        var classProfEmail = $('a').attr('href').slice(7);
+        var classProfName = $('a').text();
         classesJSON = {
           'class_name': className,
           'class_spots': classSpots,
-          'class_prof': classProf,
-	  'class-prof_email': classProfEmail
+          'class_prof': classProfName,
+	        'class-prof_email': classProfEmail
         }
       }
     }
@@ -218,7 +219,7 @@ async function scrapeRMP(classes, open_classes) {
 			} else {
         return $('#directory_results_wrapper > table > tbody > tr:nth-child(1) > td:nth-child(2) > b', html).text();
 			}
-    })
+
 
   var rmpurl = 'http://www.ratemyprofessors.com/search.jsp?query=University Of California Davis ' + profName;
   rp(rmpurl)
@@ -335,7 +336,7 @@ async function sbInit() {
           var open_classes = resultsJSON['open_classes'];
           for (const classes in open_classes) {
             message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
-            message += rmpParse(classes, open_classes);
+            // message += rmpParse(classes, open_classes); what is this, it doesn't exist...
           }
           message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
           title = 'Notify Me! Open Classes Found';
