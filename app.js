@@ -80,6 +80,8 @@ async function scrapeClasses(page, resultsJSON) {
     var errorCounter = 0;
     while (divs.length == 0 && errorCounter < 10) {
       // Keep pressing the button if the results are empty since we might've not waited long enough
+      if (!fs.existsSync('./debug'))
+        fs.mkdirSync('./debug');
       var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue(); // Check to see if there are no results
       if (error == 'No results found that matched your search criteria') {
         await page.screenshot({
@@ -297,7 +299,7 @@ async function sbInit() {
       } else if (resultsJSON['open_classes'].length > 0 && _.isEqual(resultsJSON, prevResults)) {
         console.log(chalk.cyan('No update from previous push notification, so not sending push notification'));
       } else
-        console.log(chalk.cyan('\nNo open classes found or no change found, so not sending push notification...'));
+        console.log(chalk.cyan('\nNo open classes found, so not sending push notification...'));
 
       await fs.writeFileSync('results.json', JSON.stringify(resultsJSON, null, 2), 'utf8');
       await browser.close();
