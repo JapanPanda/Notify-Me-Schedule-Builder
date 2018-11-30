@@ -219,6 +219,7 @@ async function scrapeRMP(classes, open_classes) {
 			} else {
         return $('#directory_results_wrapper > table > tbody > tr:nth-child(1) > td:nth-child(2) > b', html).text();
 			}
+    });
 
 
   var rmpurl = 'http://www.ratemyprofessors.com/search.jsp?query=University Of California Davis ' + profName;
