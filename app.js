@@ -120,7 +120,7 @@ async function scrapeClasses(page, resultsJSON) {
         'class_name': className,
         'class_spots': classSpots,
         'class_prof': classProf,
-				'class_prof_email': classProfEmail
+	'class_prof_email': classProfEmail
       }
       classesJSON.push(parsedObj);
     }
@@ -182,7 +182,7 @@ async function scrapeSpecificSections(page, resultsJSON) {
           'class_name': className,
           'class_spots': classSpots,
           'class_prof': classProf,
-					'class-prof_email': classProfEmail
+	  'class-prof_email': classProfEmail
         }
       }
     }
