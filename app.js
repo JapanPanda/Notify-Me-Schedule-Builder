@@ -113,9 +113,14 @@ async function scrapeClasses(page, resultsJSON) {
       var className = $('.data-row').eq(0).text().split(':')[1].split('-')[1].substring(1);
       className = className.substring(0, className.length - 1);
       var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
+      // FIXME
+      var classProf = $('');
+      var classProfEmail = $('');
       var parsedObj = {
         'class_name': className,
-        'class_spots': classSpots
+        'class_spots': classSpots,
+        'class_prof': classProf,
+	'class_prof_email': classProfEmail
       }
       classesJSON.push(parsedObj);
     }
@@ -171,9 +176,13 @@ async function scrapeSpecificSections(page, resultsJSON) {
       if (className == currSection) {
         sectionFound = true;
         var classSpots = $('.data-column').eq(1).text().split(':')[1].substring(1).split(' ')[0];
+        var classProf = $('.data-column').eq(3).text();
+        var classProfEmail = $('.data-column').eq(3).attribs.href.replace('mailto:', '');
         classesJSON = {
           'class_name': className,
-          'class_spots': classSpots
+          'class_spots': classSpots,
+          'class_prof': classProf,
+	  'class-prof_email': classProfEmail
         }
       }
     }
@@ -188,6 +197,43 @@ async function scrapeSpecificSections(page, resultsJSON) {
 
     resultsJSON['specific_sections'][currSection] = classesJSON;
   }
+}
+
+// Search professor by name and email in UC Davis directory
+async function scrapeRMP(classes, open_classes) {
+  var profurl = 'http://directory-test2.ucdavis.edu/search/directory_results.shtml?filter=' + open_classes[classes]['class_prof'];
+  var profName = rp(profurl)
+    .then(function(html){
+      // if multiple professors listed
+			if ($('#directory_results_wrapper > br', html).length > 0) {
+        // cycle through all listed professors
+				$('#directory_results_wrapper > table > tbody > tr').each(function(idx) {
+          // if match by email
+					if (open_classes[classes]['class_prof_email'] == $('this > td:nth-child(3) > a', html).text()) {
+            // return professor full name
+						return $('this > td:nth-child(1) > a', html).text();
+					}
+        });
+      // else single professor listed
+			} else {
+        return $('#directory_results_wrapper > table > tbody > tr:nth-child(1) > td:nth-child(2) > b', html).text();
+			}
+    })
+
+  var rmpurl = 'http://www.ratemyprofessors.com/search.jsp?query=University Of California Davis ' + profName;
+  rp(rmpurl)
+    .then(function(html){
+      rmpurl = 'http://www.ratemyprofessors.com' + $('#searchResultsBox > div.listings-wrap > ul > li > a', html)[0].attribs.href;
+    })
+
+  return rp(url)
+    .then(function(html) {
+      return {
+        professor: $('.pfname', html).text().trim() + ' ' + $('.plname', html).text().trim(),
+        quality: $('#mainContent > div.right-panel > div.rating-breakdown > div.left-breakdown > div > div.breakdown-header.quality-header > div > div > div', html).text().trim(),
+        difficulty: $('#mainContent > div.right-panel > div.rating-breakdown > div.left-breakdown > div > div:nth-child(2) > div.breakdown-section.difficulty > div', html).text().trim(),
+      };
+    })
 }
 
 async function sort(resultsJSON) {
@@ -289,6 +335,7 @@ async function sbInit() {
           var open_classes = resultsJSON['open_classes'];
           for (const classes in open_classes) {
             message += open_classes[classes]['class_name'] + ': ' + open_classes[classes]['class_spots'] + ' spots left\n';
+            message += rmpParse(classes, open_classes);
           }
           message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
           title = 'Notify Me! Open Classes Found';
