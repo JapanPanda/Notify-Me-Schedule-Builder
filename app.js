@@ -1,5 +1,6 @@
 var rp = require('request-promise');
 var $ = require('cheerio');
+var schedule = require('node-schedule');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -137,6 +138,8 @@ async function scrapeSpecificSections(page, resultsJSON) {
     var divs = await page.$$('.data-item-short');
     var errorCounter = 0;
     while (divs.length == 0 && errorCounter < 10) {
+      if (!fs.existsSync('./debug'))
+        fs.mkdirSync('./debug');
       var error = await (await (await page.$('#inlineCourseResultsDiv')).getProperty('textContent')).jsonValue();
       if (error == 'No results found that matched your search criteria') {
         await page.screenshot({
@@ -273,8 +276,7 @@ async function sbInit() {
       var prevResults;
       try {
         prevResults = JSON.parse(fs.readFileSync('./results.json', 'utf-8'));
-      }
-      catch (err) {
+      } catch (err) {
         prevResults = null;
       }
 
@@ -285,8 +287,7 @@ async function sbInit() {
           message = 'Unfortunately, the open spots have all been filled up now.\nYou will be updated when an open spot opens again!\n';
           message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
           title = 'Notify Me! Spots Have Filled Up';
-        }
-        else {
+        } else {
           message = 'Some open classes have been found: \n';
           var open_classes = resultsJSON['open_classes'];
           for (const classes in open_classes) {
@@ -374,19 +375,13 @@ async function start() {
 
   // Remind user that this is still on
   if (reminder) {
-    console.log(chalk.cyan('Sending a daily reminder...'));
-    var message = 'This is a daily reminder that Notify Me! is still running!\n';
-    message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
-    var title = 'Notify Me! Daily Reminder';
-    sendPushBullet(title, message);
-
-    setInterval(function() {
-      console.log(chalk.cyan('Sending a daily reminder...'));
-      var message = 'This is a daily reminder that Notify Me! is still running!\n';
-      message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
-      var title = 'Notify Me! Daily Reminder';
-      sendPushBullet(title, message);
-    }, 86400000);
+    var remind = schedule.scheduleJob('* 12 * * *', function() {
+        console.log(chalk.cyan('Sending a daily reminder...'));
+        var message = 'This is a daily reminder that Notify Me! is still running!\n';
+        message += '\nIf there\'s any issues, please submit an error request on the github repository https://github.com/JapanPanda/Notify-Me-Schedule-Builder';
+        var title = 'Notify Me! Daily Reminder';
+        sendPushBullet(title, message);
+    });
   }
   // Start the loop for calling every half an hour!
   setInterval(function() {
